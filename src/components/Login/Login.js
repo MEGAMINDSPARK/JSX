@@ -1,94 +1,115 @@
-import React, { useState ,useEffect} from 'react';
+import React, { useState, useEffect, useReducer } from "react";
 
-import Card from '../UI/Card/Card';
-import classes from './Login.module.css';
-import Button from '../UI/Button/Button';
+import Card from "../UI/Card/Card";
+import classes from "./Login.module.css";
+import Button from "../UI/Button/Button";
+
+const emailReducer = (state, action) => {
+  if (action.type === "USER_INPUT") {
+    return { value: action.val, isValid: action.val.includes("@") };
+  }
+  if (action.type === "INPUT_BLUR") {
+    return { value: state.value, isValid: state.value.includes("@") };
+  }
+  return { value: "", isValid: false };
+};
+
+const passwordReducer = (state, action) => {
+  if (action.type === "PASSWORD_INPUT") {
+    return { value: action.valforP, isValid: action.valforP.trim().length > 6 };
+  }
+  if (action.type === "PASSWORD_BLUR") {
+    return { value: state.valforP, isValid: state.value.trim().length > 6 };
+  }
+};
 
 const Login = (props) => {
-  const [enteredEmail, setEnteredEmail] = useState('');
-  const [emailIsValid, setEmailIsValid] = useState();
-  
-  const [enteredPassword, setEnteredPassword] = useState('');
-  const [passwordIsValid, setPasswordIsValid] = useState();
-  
-  const [enteredCollegeName, setCollegeName] = useState('');
-  const [collegeName, collegeNameIsValid] = useState();
+  // const [enteredEmail, setEnteredEmail] = useState('');
+  // const [emailIsValid, setEmailIsValid] = useState();
+
+  // const [enteredPassword, setEnteredPassword] = useState("");
+  // const [passwordIsValid, setPasswordIsValid] = useState();
 
   const [formIsValid, setFormIsValid] = useState(false);
 
+  const [emailState, dispatchEmail] = useReducer(emailReducer, {
+    value: "",
+    isValid: null,
+  });
 
-useEffect(()=>{
-  setFormIsValid(
-    enteredEmail.includes('@') && enteredPassword.trim().length > 6 && enteredCollegeName.trim().length > 1
-  );//this will run only once when the component first is rendered . run once when the component rendered for the first time 
-},[enteredEmail,enteredPassword,enteredCollegeName ]) //seform enteredemail and password valid than don't execute this or if any of them 3 are change or modified than run if not than not rerun, on the first line setformisvalid is false so we can remove from these dependencies and entered email and entered password will change in every keystrokes
+  const [passwordState, dispatchPassword] = useReducer(passwordReducer, {
+    value: "",
+    isValid: null,
+  });
+
+  useEffect(() => {
+    console.log("EFFECT RUNNING");
+
+    return () => {
+      console.log("EFFECT CLEANUP");
+    };
+  }, []);
 
   const emailChangeHandler = (event) => {
-    setEnteredEmail(event.target.value);
+    dispatchEmail({ type: "USER_INPUT", val: event.target.value });
 
-    // setFormIsValid(
-    //   event.target.value.includes('@') && enteredPassword.trim().length > 6
-    // ); passing this in the useEffect
+    setFormIsValid(
+      event.target.value.includes("@") && passwordState.value.trim().length > 6
+    );
   };
 
   const passwordChangeHandler = (event) => {
-    setEnteredPassword(event.target.value);
+    // setEnteredPassword(event.target.value);
+    dispatchPassword({ type: "PASSWORD_INPUT", valforP: event.target.value });
 
-    setFormIsValid(
-      event.target.value.trim().length > 6 && enteredEmail.includes('@')
-    );
-  };
-  const collegeNameChangeHandler = (event) => {
-    setCollegeName(event.target.value);
-
-    setFormIsValid(
-      event.target.value.trim().length > 1
-    );
+    setFormIsValid(emailState.isValid && event.target.value.trim().length > 6);
   };
 
-  const validateEmailHandler = () => {
-    setEmailIsValid(enteredEmail.includes('@'));
+  const validateEmailHandler = (event) => {
+    dispatchEmail({ type: "INPUT_BLUR" });
   };
 
   const validatePasswordHandler = () => {
-    setPasswordIsValid(enteredPassword.trim().length > 6);
-  };
-  
-  const validateCollegeNameHandler = () => {
-    collegeNameIsValid(enteredPassword.trim().length > 6);
+    dispatchPassword({type:"PASSWORD_BLUR"});
   };
 
   const submitHandler = (event) => {
     event.preventDefault();
-    props.onLogin(enteredEmail, enteredPassword);
+    // props.onLogin(enteredEmail, enteredPassword);
+    props.onLogin(emailState.value, passwordState.value);
   };
 
   return (
     <Card className={classes.login}>
       <form onSubmit={submitHandler}>
-        
-        <div
-          className={`${classes.control} ${emailIsValid === false ? classes.invalid : ''}`}>
-          <label htmlFor="email">E-Mail</label>
-          <input type="email" id="email" value={enteredEmail} onChange={emailChangeHandler} onBlur={validateEmailHandler}/>
-        </div>
-       
         <div
           className={`${classes.control} ${
-            passwordIsValid === false ? classes.invalid : ''
+            emailState.isValid === false ? classes.invalid : ""
+          }`}
+        >
+          <label htmlFor="email">E-Mail</label>
+          <input
+            type="email"
+            id="email"
+            // value={enteredEmail}
+            value={emailState.value}
+            onChange={emailChangeHandler}
+            onBlur={validateEmailHandler}
+          />
+        </div>
+        <div
+          className={`${classes.control} ${
+            passwordState.isValid === false ? classes.invalid : ""
           }`}
         >
           <label htmlFor="password">Password</label>
-          <input type="password" id="password" value={enteredPassword} onChange={passwordChangeHandler} onBlur={validatePasswordHandler}/>
-        </div>
-        
-        <div
-          className={`${classes.control} ${
-            collegeName === false ? classes.invalid : ''
-          }`}
-        >
-          <label htmlFor="cllgName">College Name</label>
-          <input type="cllgName" id="cllgName" value={enteredCollegeName} onChange={collegeNameChangeHandler} onBlur={validateCollegeNameHandler}/>
+          <input
+            type="password"
+            id="password"
+            value={passwordState.value}
+            onChange={passwordChangeHandler}
+            onBlur={validatePasswordHandler}
+          />
         </div>
         <div className={classes.actions}>
           <Button type="submit" className={classes.btn} disabled={!formIsValid}>
